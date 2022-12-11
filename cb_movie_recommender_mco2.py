@@ -78,73 +78,65 @@ def clean_data(x):
 			return ''
 
 def clean_genre_data(x):
-	return str.lower(x.replace("|", " "))
-	
+	return str.lower(str(x).replace("|", " "))
+
+def clean_cast_data(x):
+	return str.lower(str(x).replace("|", ""))
+
+
+def split_title(x):
+	movie_title = x
+	year_start = x.find('(')
+	if(year_start != -1):
+		movie_year = x[year_start:year_start+4]
+		movie_title = x[:year_start-1]
+	return movie_title
+
+def get_year(x):
+	movie_year = None
+	year_start = x.find('(')
+	if(year_start != -1):
+		movie_year = x[year_start+1:year_start+5]
+	return movie_year
+
 def create_soup(x):
-	return ' '.join(x['keywords']) + ' ' + ' '.join(x['cast']) + ' ' + x['director'] + ' ' + ' '.join(x['genres'])
+	ret_val = str(x['genres']) + ' ' + str(x['casts']) + ' ' + str(x['director'])
+	return ret_val
 
 
 if __name__== "__main__":
 
 	#loading datasets
-	ml_df=pd.read_csv('ml-latest-small/movies.csv')
+	ml_df=pd.read_csv('movies-director-casts.csv')
 
 	#Construct a reverse map of indices and movie titles
 	indices = pd.Series(ml_df.index, index=ml_df['title']).drop_duplicates()
 
+	#clean genre data.
 	features = ['genres']
 	for feature in features:
 		ml_df[feature] = ml_df[feature].apply(clean_genre_data)
 
+	#clean cast data.
+	features = ['casts']
+	for feature in features:
+		ml_df[feature] = ml_df[feature].apply(clean_cast_data)
+
+	#split title data into year.
+	features = ['title']
+	for feature in features:
+		ml_df['clean_title'] = ml_df[feature].apply(split_title)
+		ml_df['year'] = ml_df[feature].apply(get_year)
+
+	ml_df['soup'] = ml_df.apply(create_soup, axis=1)
+
 	count = CountVectorizer(stop_words='english')
-	count_matrix = count.fit_transform(ml_df['genres'])
+	count_matrix = count.fit_transform(ml_df['soup'])
 	cosine_sim = cosine_similarity(count_matrix, count_matrix)
 
 	# Reset index of our main DataFrame and construct reverse mapping as before
 	ml_df = ml_df.reset_index()
-	indices = pd.Series(ml_df.index, index=ml_df['title'])
+	indices = pd.Series(ml_df.index, index=ml_df['clean_title'])
 
-	movie_rec2 = get_recommendations('Toy Story (1995)',cosine_sim)
-	print(movie_rec2)
-	
-	'''
-	movie_rec = get_recommendations('The Dark Knight Rises',cosine_sim)
+	movie_rec = get_recommendations('Toy Story',cosine_sim)
 	print(movie_rec)
-
-	print("===========================================================")
-	
-	features = ['cast', 'crew', 'keywords', 'genres']
-	for feature in features:
-		df[feature] = df[feature].apply(literal_eval)
-
-	df['director'] = df['crew'].apply(get_director)
-
-	features = ['cast', 'keywords', 'genres']
-	for feature in features:
-		df[feature] = df[feature].apply(get_list)
-
-	# Apply clean_data function to your features.
-	features = ['cast', 'keywords', 'director', 'genres']
-
-	for feature in features:
-		df[feature] = df[feature].apply(clean_data)
-
-	df['soup'] = df.apply(create_soup, axis=1)
-
-	count = CountVectorizer(stop_words='english')
-	count_matrix = count.fit_transform(df['soup'])
-
-	cosine_sim2 = cosine_similarity(count_matrix, count_matrix)
-
-	# Reset index of our main DataFrame and construct reverse mapping as before
-	df = df.reset_index()
-	indices = pd.Series(df.index, index=df['title'])
-
-	movie_rec = get_recommendations('The Dark Knight Rises',cosine_sim2)
-	print(movie_rec)
-
-	'''
-	#===================== movielens data =====================
-
-	
-		
