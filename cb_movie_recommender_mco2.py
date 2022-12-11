@@ -46,26 +46,6 @@ def get_recommendations(title, cosine_sim):
 	# Return the top 10 most similar movies
 	return ml_df['title'].iloc[movie_indices]
 
-
-# Get the director's name from the crew feature. If director is not listed, return NaN
-def get_director(x):
-	for i in x:
-		if i['job'] == 'Director':
-			return i['name']
-	return np.nan
-
-# Returns the list top 3 elements or entire list; whichever is more.
-def get_list(x):
-	if isinstance(x, list):
-		names = [i['name'] for i in x]
-		#Check if more than 3 elements exist. If yes, return only first three. If no, return entire list.
-		if len(names) > 3:
-			names = names[:3]
-		return names
-
-	#Return empty list in case of missing/malformed data
-	return []
-
 # Function to convert all strings to lower case and strip names of spaces
 def clean_data(x):
 	if isinstance(x, list):
@@ -103,11 +83,11 @@ def create_soup(x):
 	ret_val = str(x['genres']) + ' ' + str(x['casts']) + ' ' + str(x['director'])
 	return ret_val
 
-
 if __name__== "__main__":
 
 	#loading datasets
-	ml_df=pd.read_csv('movies-director-casts.csv')
+	ml_df=pd.read_csv('movies-director-casts.csv')	# genre/director/cast metadata
+	og_df=pd.read_csv('ml-latest-small/movies.csv')	# original genre metadata
 
 	#Construct a reverse map of indices and movie titles
 	indices = pd.Series(ml_df.index, index=ml_df['title']).drop_duplicates()
@@ -129,6 +109,31 @@ if __name__== "__main__":
 		ml_df['year'] = ml_df[feature].apply(get_year)
 
 	ml_df['soup'] = ml_df.apply(create_soup, axis=1)
+
+	########################## original genre metadata ##########################
+
+	print("\n\n Original MovieLens dataset using only genre : ")
+
+	#split title data into year.
+	features = ['title']
+	for feature in features:
+		og_df['clean_title'] = og_df[feature].apply(split_title)
+		og_df['year'] = og_df[feature].apply(get_year)
+
+	count = CountVectorizer(stop_words='english')
+	count_matrix_og = count.fit_transform(og_df['genres'])
+	cosine_sim_og = cosine_similarity(count_matrix_og, count_matrix_og)
+
+	# Reset index of our main DataFrame and construct reverse mapping as before
+	og_df = og_df.reset_index()
+	indices = pd.Series(og_df.index, index=og_df['clean_title'])
+
+	movie_rec = get_recommendations('Toy Story',cosine_sim_og)
+	print(movie_rec)
+
+	########################## genre/director/cast metadata ##########################
+
+	print("\n\n Mined metadata using genre, director and cast  : ")
 
 	count = CountVectorizer(stop_words='english')
 	count_matrix = count.fit_transform(ml_df['soup'])
