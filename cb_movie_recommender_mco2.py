@@ -10,13 +10,13 @@ from ast import literal_eval
 def find_cosine_sim(df):
 
 	#Replace NaN with an empty string
-	df['overview'] = df['overview'].fillna('')
+	df['review'] = df['review'].fillna('')
 
 	#Define a TF-IDF Vectorizer Object. Remove all english stop words such as 'the', 'a'
 	tfidf = TfidfVectorizer(stop_words='english')
 
 	#Construct the required TF-IDF matrix by fitting and transforming the data
-	tfidf_matrix = tfidf.fit_transform(df['overview'])
+	tfidf_matrix = tfidf.fit_transform(df['review'])
 
 	# Compute the cosine similarity matrix
 	cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
@@ -87,6 +87,7 @@ if __name__== "__main__":
 
 	#loading datasets
 	ml_df=pd.read_csv('movies-director-casts.csv')	# genre/director/cast metadata
+	rv_df=pd.read_csv('movies-user-review.csv')	# review metadata
 	og_df=pd.read_csv('ml-latest-small/movies.csv')	# original genre metadata
 
 	#Construct a reverse map of indices and movie titles
@@ -102,17 +103,9 @@ if __name__== "__main__":
 	for feature in features:
 		ml_df[feature] = ml_df[feature].apply(clean_cast_data)
 
-	#split title data into year.
-	features = ['title']
-	for feature in features:
-		ml_df['clean_title'] = ml_df[feature].apply(split_title)
-		ml_df['year'] = ml_df[feature].apply(get_year)
-
-	ml_df['soup'] = ml_df.apply(create_soup, axis=1)
-
 	########################## original genre metadata ##########################
 
-	print("\n\n Original MovieLens dataset using only genre : ")
+	print("\n\nOriginal MovieLens dataset using only genre : ")
 
 	#split title data into year.
 	features = ['title']
@@ -129,11 +122,20 @@ if __name__== "__main__":
 	indices = pd.Series(og_df.index, index=og_df['clean_title'])
 
 	movie_rec = get_recommendations('Toy Story',cosine_sim_og)
+	print("Input Movie : 'Toy Story'")
 	print(movie_rec)
 
 	########################## genre/director/cast metadata ##########################
 
-	print("\n\n Mined metadata using genre, director and cast  : ")
+	print("\n\nMined metadata using genre, director and cast  : ")
+
+	#split title data into year.
+	features = ['title']
+	for feature in features:
+		ml_df['clean_title'] = ml_df[feature].apply(split_title)
+		ml_df['year'] = ml_df[feature].apply(get_year)
+
+	ml_df['soup'] = ml_df.apply(create_soup, axis=1)
 
 	count = CountVectorizer(stop_words='english')
 	count_matrix = count.fit_transform(ml_df['soup'])
@@ -144,4 +146,26 @@ if __name__== "__main__":
 	indices = pd.Series(ml_df.index, index=ml_df['clean_title'])
 
 	movie_rec = get_recommendations('Toy Story',cosine_sim)
+	print("Input Movie : 'Toy Story'")
+	print(movie_rec)
+
+	########################## user review metadata ##########################
+
+	print("\n\nMined metadata using user review  : ")
+
+	#split title data into year.
+	features = ['title']
+	for feature in features:
+		rv_df['clean_title'] = rv_df[feature].apply(split_title)
+		rv_df['year'] = rv_df[feature].apply(get_year)
+
+	count = CountVectorizer(stop_words='english')
+	cosine_sim = find_cosine_sim(rv_df)
+
+	# Reset index of our main DataFrame and construct reverse mapping as before
+	rv_df = rv_df.reset_index()
+	indices = pd.Series(rv_df.index, index=rv_df['clean_title'])
+
+	movie_rec = get_recommendations('Boomerang',cosine_sim)
+	print("Input Movie : 'Boomerang'")
 	print(movie_rec)
