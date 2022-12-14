@@ -7,6 +7,9 @@ from sklearn.metrics.pairwise import linear_kernel
 from sklearn.metrics.pairwise import cosine_similarity
 from ast import literal_eval
 
+#target_movie = 'Sister Act'
+target_movie = 'Avatar'
+#target_movie = 'Harry Potter and the Chamber of Secrets'
 
 # Function that takes in movie title as input and outputs most similar movies
 def get_recommendations(title, cosine_sim):
@@ -110,8 +113,8 @@ if __name__== "__main__":
 	ml_df = ml_df.reset_index()
 	indices = pd.Series(ml_df.index, index=ml_df['clean_title'])
 
-	movie_rec = get_recommendations('Toy Story',cosine_sim)
-	print("Input Movie : 'Toy Story'")
+	movie_rec = get_recommendations(target_movie,cosine_sim)
+	print("Input Movie : ",target_movie)
 	print(movie_rec)
 
 	########################## user review metadata using TFIDF ##########################
@@ -141,8 +144,8 @@ if __name__== "__main__":
 	rv_df = rv_df.reset_index()
 	indices = pd.Series(rv_df.index, index=rv_df['clean_title'])
 
-	movie_rec = get_recommendations('Toy Story',cosine_sim)
-	print("Input Movie : 'Toy Story'")
+	movie_rec = get_recommendations(target_movie,cosine_sim)
+	print("Input Movie : ",target_movie)
 	print(movie_rec)
 
 	########################## user review + genre/director/cast metadata using TFIDF ##########################
@@ -165,6 +168,6 @@ if __name__== "__main__":
 	# Compute the cosine similarity matrix
 	cosine_sim = cosine_similarity(merge_feature_matrix, merge_feature_matrix)
 
-	movie_rec = get_recommendations('Toy Story',cosine_sim)
-	print("Input Movie : 'Toy Story'")
+	movie_rec = get_recommendations(target_movie,cosine_sim)
+	print("Input Movie : ",target_movie)
 	print(movie_rec)
